@@ -1,2 +1,2 @@
-# film-recommendation-test
-A test for a film recommendation system component.
+# film-recommend
+A test for a film recommendation server component.
