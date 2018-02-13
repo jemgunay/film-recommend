@@ -17,32 +17,54 @@ func NewRecommender() (re Recommender) {
 	return re
 }
 
-// Pull film data from SQL DB and parse into regommender object.
+// Pull fresh film data from SQL DB and parse into regommend object.
 func (re *Recommender) refresh() (err error) {
 	re.filmsTable.Flush()
 
-	watchedFilms := make(map[interface{}]float64)
-	watchedFilms["film_id"] = 4.0
+	req, err := dbInstance.connect()
+	if err != nil {
+		return err
+	}
 
-	re.filmsTable.Add(12345, watchedFilms)
+	watchedData := req.GetAllWatchedListData()
+	if err != nil {
+		return err
+	}
+
+	// iterate over films
+	for userID, filmRecord := range *watchedData {
+		re.filmsTable.Add(userID, filmRecord)
+	}
+
 
 	return nil
 }
 
 // Produce a set of recommendations for a user of a set size.
-func (re *Recommender) recommend(userID string, num int) (response string) {
-	// get recommendations
-	recs, err := re.filmsTable.Recommend(userID)
-	if err != nil {
-		return fmt.Sprintf("could not generate recommendations for user, ID:[%v], error:[%v]", userID, err)
+func (re *Recommender) recommend(userID int, numResults int) (response map[int]float64, err error) {
+	// pull fresh data from DB
+	if err = re.refresh(); err != nil {
+		return
 	}
 
-	if len(recs) < num {
-		num = len(recs)
+	// generate recommendations
+	recs, err := re.filmsTable.Recommend(userID)
+	if err != nil {
+		return
 	}
-	for result := 0; result < num; result++ {
+
+	// trim result set to requested length
+	if len(recs) < numResults || numResults == 0 {
+		numResults = len(recs)
+	}
+
+	// parse for response
+	response = make(map[int]float64)
+	for result := 0; result < numResults; result++ {
+		filmID := recs[result].Key.(int)
+		response[filmID] = recs[result].Distance
 		fmt.Printf("[%v]: Recommending %v with score %v\n", result, recs[result].Key, recs[result].Distance)
 	}
 
-	return ""
+	return response, nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -21,6 +22,18 @@ func httpRespond(w http.ResponseWriter, r *http.Request, response interface{}, s
 	}
 
 	r.Body.Close()
+}
+
+// Get & validate a parameter from the URL query.
+func getURLParams(r *http.Request) (params map[string]string) {
+	params = make(map[string]string)
+
+	for k, v := range r.URL.Query() {
+		if len(v) > 0 {
+			params[k] = v[0]
+		}
+	}
+	return
 }
 
 // Get & validate a parameter from the request body/data.
@@ -81,4 +94,21 @@ func completeTemplate(filePath string, data interface{}) (result template.HTML) 
 	}
 
 	return template.HTML(buffer.String())
+}
+
+// Convert a target object into a JSON string.
+func toJSON(target interface{}) (JSON string, err error) {
+	jsonResponse, err := json.Marshal(target)
+	if err != nil {
+		return
+	}
+
+	// pretty print JSON response - if this fails, return original unprettified JSON
+	indentBuffer := &bytes.Buffer{}
+	if err = json.Indent(indentBuffer, jsonResponse, "", "\t"); err != nil {
+		return
+	}
+	jsonResponse = indentBuffer.Bytes()
+
+	return string(jsonResponse), nil
 }
