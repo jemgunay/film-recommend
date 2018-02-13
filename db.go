@@ -46,6 +46,16 @@ type User struct {
 	Name string `gorm:"column:name"`
 }
 
+// Get all records from the User table.
+func (r *DBRequest) GetUsers() (response *[]User) {
+	defer r.db.Close()
+
+	var usersResults []User
+	r.db.Find(&usersResults)
+
+	return &usersResults
+}
+
 // Get the user ID for the corresponding user name.
 func (r *DBRequest) GetUserByName(name string) (response *User, err error) {
 	defer r.db.Close()
@@ -86,16 +96,6 @@ func (r *DBRequest) GetAllWatchedListData() (response *map[int]map[interface{}]f
 	}
 
 	return &watchedLists
-}
-
-// Get all records from the User table.
-func (r *DBRequest) GetUsers(userID string) (response *[]User) {
-	defer r.db.Close()
-
-	var usersResults []User
-	r.db.Find(&usersResults)
-
-	return &usersResults
 }
 
 // Get the user ID for the corresponding user name.

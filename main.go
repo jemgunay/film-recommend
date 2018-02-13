@@ -53,7 +53,20 @@ func main() {
 
 // Get home HTML.
 func searchHandler(w http.ResponseWriter, r *http.Request) {
-	htmlResult := completeTemplate("/dynamic/search.html", nil)
+	// get users from DB for drop down
+	req, err := dbInstance.connect()
+	if err != nil {
+		httpRespond(w, r, "DB error", http.StatusInternalServerError)
+		return
+	}
+
+	templateData := struct {
+		Users []User
+	}{
+		*req.GetUsers(),
+	}
+
+	htmlResult := completeTemplate("/dynamic/search.html", templateData)
 
 	httpRespond(w, r, htmlResult, http.StatusOK)
 }

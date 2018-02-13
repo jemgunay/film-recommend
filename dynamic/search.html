@@ -38,6 +38,15 @@
 
                     <!-- search bar -->
                     <div class="navbar-form navbar-right">
+
+                        <div class="input-group">
+                            <select class="form-control" id="user-dropdown">
+                                {{ range $key, $value := .Users }}
+                                    <option value="{{ $value.ID }}">{{ $value.Name }}</option>
+                                {{ end }}
+                            </select>
+                        </div>
+
                         <div class="input-group">
                             <input type="text" id="main-nav-search" class="form-control" placeholder="Search">
                             <span class="input-group-btn">

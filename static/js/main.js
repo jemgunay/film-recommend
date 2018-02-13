@@ -67,7 +67,9 @@ function populateMainPanel(content) {
             imagePath = "https://image.tmdb.org/t/p/w185" + film["poster_path"];
         }
         var overviewTrimmed = film["overview"];
-        var thumbRendered = Mustache.render(thumbTemplate, {title: film["title"], overview: overviewTrimmed, film_image: imagePath});
+        var filmID = film["id"];
+
+        var thumbRendered = Mustache.render(thumbTemplate, {title: film["title"], overview: overviewTrimmed, film_image: imagePath, film_id: filmID});
         $("#main-panel .row").append(thumbRendered);
     });
 
@@ -76,9 +78,9 @@ function populateMainPanel(content) {
         $(this).closest(".thumbnail-container").remove();
     });
 
-    $(".thumbnail-container .watched-btn").on("click", function() {
+    $(".thumbnail-container .watched-btn").on("click", function(e) {
         e.preventDefault();
-        addToWatchedList($(this).attr("data-file-id"));
+        addToWatchedList($(this).attr("data-film-id"));
     });
 }
 
@@ -92,9 +94,10 @@ function addToWatchedList(filmID) {
     } while(!valid);
 
     // get user_id from dropdown
+    var userID = $("#user-dropdown").val();
 
-
-    var data = "user_id=" + + "&film_id=" + filmID + "&rating=" + rating;
+    // compose URL and perform request
+    var data = "user_id=" + userID + "&film_id=" + filmID + "&rating=" + rating;
     performRequest(hostname + "/watched", "POST", data, function(result) {
         console.log(result);
     });

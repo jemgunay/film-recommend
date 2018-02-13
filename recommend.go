@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/muesli/regommend"
+	"math"
 )
 
 type Recommender struct {
@@ -19,8 +20,6 @@ func NewRecommender() (re Recommender) {
 
 // Pull fresh film data from SQL DB and parse into regommend object.
 func (re *Recommender) refresh() (err error) {
-	re.filmsTable.Flush()
-
 	req, err := dbInstance.connect()
 	if err != nil {
 		return err
@@ -31,11 +30,12 @@ func (re *Recommender) refresh() (err error) {
 		return err
 	}
 
+	re.filmsTable.Flush()
+
 	// iterate over films
 	for userID, filmRecord := range *watchedData {
 		re.filmsTable.Add(userID, filmRecord)
 	}
-
 
 	return nil
 }
@@ -62,7 +62,12 @@ func (re *Recommender) recommend(userID int, numResults int) (response map[int]f
 	response = make(map[int]float64)
 	for result := 0; result < numResults; result++ {
 		filmID := recs[result].Key.(int)
+
 		response[filmID] = recs[result].Distance
+		if math.IsNaN(recs[result].Distance) {
+			response[filmID] = 0
+		}
+
 		fmt.Printf("[%v]: Recommending %v with score %v\n", result, recs[result].Key, recs[result].Distance)
 	}
 
