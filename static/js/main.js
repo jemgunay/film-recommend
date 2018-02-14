@@ -1,15 +1,13 @@
 var thumbTemplate = "";
-Mustache.parse(thumbTemplate);
 
 var tmdb = new TMDBObject("9d35385bd6e30e1da8b4350e5be48b44");
-
 
 $(document).ready(function() {
     performRequest(hostname + "/static/templates/film_search_result.html", "GET", "", function(result) {
         thumbTemplate = result;
+        Mustache.parse(thumbTemplate);
     });
-
-    $("#main-panel .row").empty();
+    
     tmdb.discover(populateMainPanel);
 
     $('#main-nav-search').on('input', function() {
@@ -22,42 +20,10 @@ $(document).ready(function() {
     });
 });
 
-// represent TMDB functionality
-function TMDBObject(apiKey) {
-    this.apiKey = apiKey;
-
-    // search
-    this.search = function(resultFunc, query) {
-        var composedRequest = "search/movie?api_key=" + this.apiKey + "&query=" + query + "&include_adult=false&sort_by=popularity.desc";
-        this.request(composedRequest, resultFunc);
-    };
-
-    // discover
-    this.discover = function(resultFunc) {
-        var composedRequest = "discover/movie?api_key=" + this.apiKey + "&primary_release_year=" + (new Date()).getFullYear() + "&sort_by=popularity.desc";
-        this.request(composedRequest, resultFunc);
-    };
-
-    // perform the AJAX request
-    this.request = function(URL, resultFunc) {
-        $.ajax({
-            url: "https://api.themoviedb.org/3/" + URL,
-            type: 'GET',
-            dataType: 'json',
-            error: function(e) {
-                console.log(e);
-            },
-            success: function(e) {
-                resultFunc(e);
-            }
-        });
-    }
-}
-
 // populate page with ajax result
 function populateMainPanel(content) {
     // clear main panel
-    $("#main-panel .row").empty();
+    $("#main-panel").empty();
 
     // iterate over search results
     $.each(content["results"], function (key, value) {
@@ -70,7 +36,7 @@ function populateMainPanel(content) {
         var filmID = film["id"];
 
         var thumbRendered = Mustache.render(thumbTemplate, {title: film["title"], overview: overviewTrimmed, film_image: imagePath, film_id: filmID});
-        $("#main-panel .row").append(thumbRendered);
+        $("#main-panel").append(thumbRendered);
     });
 
     $(".thumbnail-container .hide-btn").on("click", function(e) {

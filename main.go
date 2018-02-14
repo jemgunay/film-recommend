@@ -112,11 +112,6 @@ func watchedHandler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		params := getURLParams(r)
 
-		if params["user_id"] == "" {
-			httpRespond(w, r, "no user_id provided", http.StatusBadRequest)
-			return
-		}
-
 		// perform DB request
 		req, err := dbInstance.connect()
 		if err != nil {
@@ -124,9 +119,37 @@ func watchedHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		watched := req.GetWatchedByUserID(params["user_id"])
+		var resultData interface{}
 
-		json, err := toJSON(watched)
+		switch {
+		// get watched lists for all users
+		case params["user_id"] != "":
+			resultData = req.GetWatchedByUserID(params["user_id"])
+
+		default:
+			watchedResults := req.GetAllWatchedListData()
+
+			// map[userID]map[filmID]rating
+			watchedLists := make(map[string]map[int]float64)
+
+			for _, record := range *watchedResults {
+				userIDStr := fmt.Sprint(record.UserID)
+
+				// check if user has been found yet
+				if _, ok := watchedLists[userIDStr]; !ok {
+					watchedLists[userIDStr] = make(map[int]float64)
+				}
+
+				// add film & rating record to user
+				m := watchedLists[userIDStr]
+				m[record.FilmID] = float64(record.Rating)
+				watchedLists[userIDStr] = m
+			}
+			resultData = watchedLists
+		}
+
+		// parse response to JSON
+		json, err := toJSON(resultData)
 		if err != nil {
 			httpRespond(w, r, "JSON error", http.StatusInternalServerError)
 			return
@@ -144,17 +167,13 @@ func watchedHandler(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println(params)
 
-		if params["user_id"] == "" {
-			httpRespond(w, r, "no user_id provided", http.StatusBadRequest)
-			return
-		}
-		if params["film_id"] == "" {
-			httpRespond(w, r, "no film_id provided", http.StatusBadRequest)
-			return
-		}
-		if params["rating"] == "" {
-			httpRespond(w, r, "no rating provided", http.StatusBadRequest)
-			return
+		// enforce reqired params
+		requiredParams := []string{"user_id", "film_id", "rating"}
+		for _, param := range requiredParams {
+			if params[param] == "" {
+				httpRespond(w, r, "no " + param + " provided", http.StatusBadRequest)
+				return
+			}
 		}
 
 		// parse to ints
@@ -183,11 +202,6 @@ func watchedHandler(w http.ResponseWriter, r *http.Request) {
 func userHandler(w http.ResponseWriter, r *http.Request) {
 	params := getURLParams(r)
 
-	if params["user"] == "" {
-		httpRespond(w, r, "no user provided", http.StatusBadRequest)
-		return
-	}
-
 	// perform DB request
 	req, err := dbInstance.connect()
 	if err != nil {
@@ -195,17 +209,33 @@ func userHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := req.GetUserByName(params["user"])
-	if err != nil {
-		httpRespond(w, r, "DB error", http.StatusInternalServerError)
-		return
+	var resultData interface{}
+
+	switch {
+	// get user by user name
+	case params["user"] != "":
+		resultData, err = req.GetUserByName(params["user"])
+		if err != nil {
+			httpRespond(w, r, "DB error", http.StatusInternalServerError)
+			return
+		}
+
+	// get user by user ID
+	case params["user_id"] != "":
+		resultData, err = req.GetUserByID(params["user_id"])
+		if err != nil {
+			httpRespond(w, r, "DB error", http.StatusInternalServerError)
+			return
+		}
 	}
 
-	json, err := toJSON(user)
+	json, err := toJSON(resultData)
 	if err != nil {
+		fmt.Println(err)
 		httpRespond(w, r, "JSON error", http.StatusInternalServerError)
 		return
 	}
 
 	httpRespond(w, r, json, http.StatusOK)
+	return
 }

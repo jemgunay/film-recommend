@@ -60,42 +60,38 @@ func (r *DBRequest) GetUsers() (response *[]User) {
 func (r *DBRequest) GetUserByName(name string) (response *User, err error) {
 	defer r.db.Close()
 
-	var userResult *User
-	r.db.Where("name = ?", name).First(userResult)
+	var userResult User
+	r.db.Where("name = ?", name).First(&userResult)
 
-	return userResult, nil
+	return &userResult, nil
+}
+
+// Get the user ID for the corresponding user name.
+func (r *DBRequest) GetUserByID(userID string) (response *User, err error) {
+	defer r.db.Close()
+
+	var userResult User
+	r.db.Where("user_id = ?", userID).First(&userResult)
+
+	return &userResult, nil
 }
 
 // Model for Watched table.
 type Watched struct {
 	ID     int `gorm:"column:watched_id;primary_key;AUTO_INCREMENT"`
-	UserID int `gorm:"column:user_id"`
+	UserID int `gorm:"column:user_id" json:"-"`
 	FilmID int `gorm:"column:film_id"`
 	Rating int `gorm:"column:rating"`
 }
 
 // Get the user ID for the corresponding user name.
-func (r *DBRequest) GetAllWatchedListData() (response *map[int]map[interface{}]float64) {
+func (r *DBRequest) GetAllWatchedListData() (watchedLists *[]Watched) {
 	defer r.db.Close()
 
 	var watchedResults []Watched
 	r.db.Find(&watchedResults)
 
-	watchedLists := make(map[int]map[interface{}]float64)
-
-	for _, record := range watchedResults {
-		// check if user has been found yet
-		if _, ok := watchedLists[record.UserID]; !ok {
-			watchedLists[record.UserID] = make(map[interface{}]float64)
-		}
-
-		// add film & rating record to user
-		m := watchedLists[record.UserID]
-		m[record.FilmID] = float64(record.Rating)
-		watchedLists[record.UserID] = m
-	}
-
-	return &watchedLists
+	return &watchedResults
 }
 
 // Get the user ID for the corresponding user name.

@@ -11,6 +11,9 @@ h1, h2, h3, h4, h5, h6, p, th {
 h2 {
     padding: 10px 0 12px 0;
 }
+h3 {
+    margin-top: 0;
+}
 h4 {
     margin-top: 5px;
     margin-bottom: 20px;
@@ -32,6 +35,11 @@ a {
 a:hover {
     color: #337ab7;
     text-decoration: none;
+}
+
+.thumbnail {
+    height: 460px;
+    overflow: hidden;
 }
 
 /* bootstrap remove rounded corners */

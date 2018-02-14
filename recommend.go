@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/muesli/regommend"
 	"math"
 )
@@ -25,15 +23,27 @@ func (re *Recommender) refresh() (err error) {
 		return err
 	}
 
-	watchedData := req.GetAllWatchedListData()
-	if err != nil {
-		return err
+	watchedResults := req.GetAllWatchedListData()
+
+	// map[userID]map[filmID]rating
+	watchedLists := make(map[int]map[interface{}]float64)
+
+	for _, record := range *watchedResults {
+		// check if user has been found yet
+		if _, ok := watchedLists[record.UserID]; !ok {
+			watchedLists[record.UserID] = make(map[interface{}]float64)
+		}
+
+		// add film & rating record to user
+		m := watchedLists[record.UserID]
+		m[record.FilmID] = float64(record.Rating)
+		watchedLists[record.UserID] = m
 	}
 
 	re.filmsTable.Flush()
 
 	// iterate over films
-	for userID, filmRecord := range *watchedData {
+	for userID, filmRecord := range watchedLists {
 		re.filmsTable.Add(userID, filmRecord)
 	}
 
@@ -68,7 +78,7 @@ func (re *Recommender) recommend(userID int, numResults int) (response map[int]f
 			response[filmID] = 0
 		}
 
-		fmt.Printf("[%v]: Recommending %v with score %v\n", result, recs[result].Key, recs[result].Distance)
+		//fmt.Printf("[%v]: Recommending %v with score %v\n", result, recs[result].Key, recs[result].Distance)
 	}
 
 	return response, nil
