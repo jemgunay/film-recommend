@@ -14,6 +14,11 @@ function TMDBObject(apiKey) {
         this.request(composedRequest, resultFunc);
     };
 
+    // get film data for specific film IDs
+    this.getFilmsByUserID = function(films) {
+
+    };
+
     // perform the AJAX request
     this.request = function(URL, resultFunc) {
         $.ajax({
@@ -27,5 +32,5 @@ function TMDBObject(apiKey) {
                 resultFunc(e);
             }
         });
-    }
+    };
 }
