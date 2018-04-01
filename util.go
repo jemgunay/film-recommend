@@ -98,17 +98,9 @@ func completeTemplate(filePath string, data interface{}) (result template.HTML) 
 
 // Convert a target object into a JSON string.
 func toJSON(target interface{}) (JSON string, err error) {
-	jsonResponse, err := json.Marshal(target)
+	jsonResponse, err := json.MarshalIndent(target, "", "\t")
 	if err != nil {
 		return
 	}
-
-	// pretty print JSON response - if this fails, return original unprettified JSON
-	indentBuffer := &bytes.Buffer{}
-	if err = json.Indent(indentBuffer, jsonResponse, "", "\t"); err != nil {
-		return
-	}
-	jsonResponse = indentBuffer.Bytes()
-
 	return string(jsonResponse), nil
 }
